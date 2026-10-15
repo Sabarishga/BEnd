@@ -1,35 +1,12 @@
 const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false,
-  requireTLS: true,
-  connectionTimeout: 30000,
-  greetingTimeout: 30000,
-  socketTimeout: 60000,
+  service: 'gmail',
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS?.replace(/\s/g, ''),
+    pass: process.env.EMAIL_PASS,
   },
 });
-
-const sendEmail = async (mailOptions, emailType) => {
-  try {
-    const result = await transporter.sendMail(mailOptions);
-    console.log(`${emailType} email sent to ${mailOptions.to}`);
-    return result;
-  } catch (err) {
-    console.error(`Failed to send ${emailType} email to ${mailOptions.to}:`, {
-      message: err.message,
-      code: err.code,
-      command: err.command,
-      responseCode: err.responseCode,
-      response: err.response,
-    });
-    throw err;
-  }
-};
 
 const sendNewsAlertEmail = async (toEmail, articles) => {
   if (!articles.length) return;
@@ -50,7 +27,12 @@ const sendNewsAlertEmail = async (toEmail, articles) => {
     html: `<h2>Latest News Updates</h2><ul>${listHtml}</ul>`,
   };
 
-  await sendEmail(mailOptions, 'Alert');
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Alert email sent to ${toEmail}`);
+  } catch (err) {
+    console.error(`Failed to send email to ${toEmail}:`, err.message);
+  }
 };
 
 const sendPasswordResetEmail = async (toEmail, token) => {
@@ -58,13 +40,13 @@ const sendPasswordResetEmail = async (toEmail, token) => {
   resetUrl.searchParams.set('email', toEmail);
   resetUrl.searchParams.set('token', token);
 
-  await sendEmail({
+  await transporter.sendMail({
     from: process.env.EMAIL_USER,
     to: toEmail,
     subject: 'Reset your password',
     text: `Use this link to reset your password. It expires in 1 hour: ${resetUrl.toString()}`,
     html: `<p>Use the link below to reset your password. It expires in 1 hour.</p><p><a href="${resetUrl.toString()}">Reset Password</a></p>`,
-  }, 'Password reset');
+  });
 };
 
 module.exports = { sendNewsAlertEmail, sendPasswordResetEmail };

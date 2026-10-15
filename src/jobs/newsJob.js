@@ -1,6 +1,8 @@
 const cron = require('node-cron');
 const User = require('../models/User');
-const { sendNewsAlertForUser } = require('../services/newsAlertService');
+const Notification = require('../models/Notification');
+const { fetchNewsByCategory } = require('../services/newsService');
+const { sendNewsAlertEmail } = require('../services/emailService');
 
 const FREQUENCY_MS = {
   immediate: 0,
@@ -18,7 +20,29 @@ const runNewsAlertCheck = async () => {
 
     if (!due) continue;
 
-    await sendNewsAlertForUser(user);
+    let articles = [];
+    for (const category of user.categories) {
+      const categoryArticles = await fetchNewsByCategory(category);
+      articles = articles.concat(
+        categoryArticles.map((a) => ({ ...a, category }))
+      );
+    }
+
+    if (!articles.length) continue;
+
+    const notifications = articles.map((a) => ({
+      user: user._id,
+      title: a.title,
+      description: a.description,
+      url: a.url,
+      category: a.category,
+    }));
+    await Notification.insertMany(notifications);
+
+    await sendNewsAlertEmail(user.email, articles);
+
+    user.lastSentAt = new Date();
+    await user.save();
   }
 };
 

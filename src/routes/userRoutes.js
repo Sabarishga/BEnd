@@ -4,7 +4,6 @@ const User = require("../models/User");
 const Notification = require("../models/Notification");
 const { ALLOWED_CATEGORIES } = require("../constants/newsCategories");
 const { sendPasswordResetEmail } = require("../services/emailService");
-const { sendNewsAlertForUser } = require("../services/newsAlertService");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 
@@ -234,16 +233,7 @@ router.post("/subscribe", async (req, res) => {
       { new: true, runValidators: true },
     ).select("-password");
     if (!user) return res.status(404).json({ message: "User not found" });
-    let emailSent;
-    try {
-      emailSent = await sendNewsAlertForUser(user);
-    } catch (err) {
-      console.error("Unable to send initial subscription alert:", err.message);
-      return res.status(502).json({
-        message: "Subscription saved, but the alert email could not be sent",
-      });
-    }
-    res.json({ ...user.toObject(), emailSent });
+    res.json(user);
   } catch (err) {
     console.error("Unable to subscribe:", err.message);
     res.status(500).json({ message: "Unable to subscribe" });
