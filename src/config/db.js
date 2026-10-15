@@ -4,12 +4,12 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const connectDB = async () => {
-  const mongoUri = process.env.MONGO_URI;
+  const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
   if (!mongoUri) {
-    throw new Error('MONGO_URI must be set to a MongoDB connection string');
+    throw new Error('MONGODB_URI or MONGO_URI must be set to a MongoDB connection string');
   }
   if (!/^mongodb(?:\+srv)?:\/\//i.test(mongoUri)) {
-    throw new Error('MONGO_URI must be a valid MongoDB connection string');
+    throw new Error('MONGODB_URI or MONGO_URI must be a valid MongoDB connection string');
   }
 
   await mongoose.connect(mongoUri);
