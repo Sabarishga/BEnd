@@ -32,6 +32,7 @@ const sendNewsAlertEmail = async (toEmail, articles) => {
     console.log(`Alert email sent to ${toEmail}`);
   } catch (err) {
     console.error(`Failed to send email to ${toEmail}:`, err.message);
+    throw err;
   }
 };
 
