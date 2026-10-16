@@ -30,18 +30,25 @@ const runNewsAlertCheck = async () => {
 
     if (!articles.length) continue;
 
+    try {
+      await sendNewsAlertEmail(user.email, articles);
+    } catch (err) {
+      console.error(`Skipping alert history for ${user.email}:`, err.message);
+      continue;
+    }
+
+    const sentAt = new Date();
     const notifications = articles.map((a) => ({
       user: user._id,
       title: a.title,
       description: a.description,
       url: a.url,
       category: a.category,
+      sentAt,
     }));
     await Notification.insertMany(notifications);
 
-    await sendNewsAlertEmail(user.email, articles);
-
-    user.lastSentAt = new Date();
+    user.lastSentAt = sentAt;
     await user.save();
   }
 };
