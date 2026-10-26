@@ -5,8 +5,6 @@ const { ALLOWED_CATEGORIES } = require("../constants/newsCategories");
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
 
-// Accepts ?category=sports, ?category=sports,health or ?category=sports&category=health.
-// Returns [] for "no filter" and null when any value is invalid.
 const parseCategories = (raw) => {
   if (raw === undefined) return [];
   const parts = Array.isArray(raw) ? raw : [raw];
@@ -44,11 +42,7 @@ const findUserByEmail = async (email) => {
   return { user };
 };
 
-/**
- * GET /api/dashboard/notifications
- * Query: email (required), category (optional, one or many), sort (newest|oldest),
- *        from / to (optional ISO dates), page, limit
- */
+
 const getDashboardNotifications = async (req, res) => {
   const { email, category, sort = "newest", from, to } = req.query;
 
@@ -115,11 +109,7 @@ const getDashboardNotifications = async (req, res) => {
   }
 };
 
-/**
- * GET /api/dashboard/summary?email=...
- * Total emailed articles, last sent time and a per-category count
- * (used for the category filter chips/badges on the Dashboard).
- */
+
 const getDashboardSummary = async (req, res) => {
   try {
     const found = await findUserByEmail(req.query.email);

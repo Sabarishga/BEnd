@@ -4,8 +4,6 @@ const Notification = require('../models/Notification');
 const { fetchNewsByCategory } = require('../services/newsService');
 const { sendNewsAlertEmail } = require('../services/emailService');
 
-// How long to wait between emails for each user setting.
-// immediate = every check (once a minute), hourly = 60 min, daily = 24 h.
 const FREQUENCY_MS = {
   immediate: 0,
   hourly: 60 * 60 * 1000,
@@ -13,20 +11,12 @@ const FREQUENCY_MS = {
 };
 
 const MAX_ARTICLES_PER_EMAIL = 10;
-
-// The job ticks once a minute. This tolerance absorbs cron jitter so an hourly
-// user gets the email on the tick at exactly 60 min (not 61) without ever
-// firing a minute early. Keep it at 30s while the job ticks every minute.
 const TOLERANCE_MS = 30 * 1000;
-
-// How often each category is re-fetched from the news provider.
-// NewsAPI free plan = 100 requests/day TOTAL, so 1440 / minutes * categories must stay under 100.
-// 15 min = 96/day for ONE category. Raise NEWS_CACHE_MINUTES (in .env) if users pick several categories.
 const CACHE_TTL_MS = Number(process.env.NEWS_CACHE_MINUTES || 15) * 60 * 1000;
-const FAIL_BACKOFF_MS = 5 * 60 * 1000; // after a failed fetch, wait before trying that category again
+const FAIL_BACKOFF_MS = 5 * 60 * 1000;
 
-const cache = new Map(); // category -> { at, articles }
-const failedAt = new Map(); // category -> timestamp of last failed fetch
+const cache = new Map();
+const failedAt = new Map();
 
 const debug = (...args) => {
   if (process.env.NEWS_JOB_DEBUG === 'true') console.log(...args);
@@ -38,7 +28,7 @@ const getArticles = async (category) => {
 
   const lastFail = failedAt.get(category);
   if (lastFail && Date.now() - lastFail < FAIL_BACKOFF_MS) {
-    if (hit) return hit.articles; // keep serving the last good copy
+    if (hit) return hit.articles;
     throw new Error('recent fetch failure, retrying shortly');
   }
 
@@ -63,7 +53,7 @@ const isDue = (user, runStartedAt) => {
   return runStartedAt - new Date(user.lastSentAt).getTime() >= interval - TOLERANCE_MS;
 };
 
-let isRunning = false; // prevents two overlapping runs from sending duplicate emails
+let isRunning = false;
 
 const runNewsAlertCheck = async () => {
   if (isRunning) {
@@ -71,10 +61,9 @@ const runNewsAlertCheck = async () => {
     return;
   }
   isRunning = true;
-  const runStartedAt = Date.now(); // all timing decisions use the tick time, so there is no drift
+  const runStartedAt = Date.now();
 
   try {
-    // Only users who are currently signed in receive alerts
     const users = await User.find({ subscribed: true, isLoggedIn: true });
     debug(`[newsJob] checking ${users.length} subscribed user(s)`);
 
@@ -85,7 +74,6 @@ const runNewsAlertCheck = async () => {
           continue;
         }
 
-        // Collect articles; a failure in one category must not stop the others
         const byUrl = new Map();
         for (const category of user.categories) {
           try {
@@ -103,7 +91,6 @@ const runNewsAlertCheck = async () => {
           continue;
         }
 
-        // Only send articles this user hasn't already received
         const alreadySent = new Set(
           await Notification.find({
             user: user._id,
@@ -140,7 +127,6 @@ const runNewsAlertCheck = async () => {
         await User.updateOne({ _id: user._id }, { lastSentAt: sentAt });
         console.log(`[newsJob] ${user.email}: sent ${articles.length} article(s) (${user.frequency})`);
       } catch (err) {
-        // Never let one user break the loop for everyone else
         console.error(`[newsJob] error for ${user.email}:`, err.message);
       }
     }
@@ -150,13 +136,11 @@ const runNewsAlertCheck = async () => {
 };
 
 const startNewsAlertJob = () => {
-  // Every minute. Each user's own frequency decides whether an email is due.
   cron.schedule('* * * * *', () => {
     runNewsAlertCheck().catch((err) => console.error('[newsJob] job failed:', err.message));
   });
   console.log('[newsJob] scheduled: checks every minute');
 
-  // For testing: set RUN_ALERT_ON_START=true in .env to run once at startup
   if (process.env.RUN_ALERT_ON_START === 'true') {
     runNewsAlertCheck().catch((err) => console.error('[newsJob] startup run failed:', err.message));
   }
