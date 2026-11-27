@@ -1,46 +1,24 @@
-const express = require("express");
-const NewsArticle = require("../models/NewsArticle");
-const { ALLOWED_CATEGORIES } = require("../constants/newsCategories");
-const {
-  fetchNewsByCategory,
-  fetchFeaturedBitcoinNews,
-} = require("../services/newsService");
+const express = require('express');
+const news = require('../Controllers/newsController');
+const asyncHandler = require('../utils/asyncHandler');
+const validate = require('../middleware/validate');
+const { categories, integer } = require('../utils/rules');
 
 const router = express.Router();
 
-router.get("/news/featured", async (req, res) => {
-  try {
-    const articles = await fetchFeaturedBitcoinNews();
-    return res.json(articles);
-  } catch (err) {
-    console.error("Failed to load featured news:", err.message);
-    return res.status(502).json({ message: "Unable to load featured news" });
-  }
-});
+// Public: anyone can read headlines, including visitors on the landing page.
+router.get('/headlines', asyncHandler(news.getHeadlines));
 
-router.get("/news", async (req, res) => {
-  const category = typeof req.query.category === "string"
-    ? req.query.category.trim().toLowerCase()
-    : "";
-
-  if (!ALLOWED_CATEGORIES.includes(category)) {
-    return res.status(400).json({
-      message: `Invalid category. Allowed options: ${ALLOWED_CATEGORIES.join(", ")}`,
-    });
-  }
-
-  try {
-    await fetchNewsByCategory(category);
-
-    const articles = await NewsArticle.find({ category })
-      .sort({ publishedAt: -1 })
-      .limit(50)
-      .lean();
-    return res.json(articles);
-  } catch (err) {
-    console.error(`Failed to load news for category "${category}":`, err.message);
-    return res.status(502).json({ message: "Unable to load news for this category" });
-  }
-});
+router.get(
+  '/',
+  validate(
+    {
+      category: [categories({ required: true }), 'Category'],
+      limit: [integer({ min: 1, max: 50, fallback: 30 }), 'Limit'],
+    },
+    'query'
+  ),
+  asyncHandler(news.getNews)
+);
 
 module.exports = router;

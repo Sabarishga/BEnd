@@ -1,18 +1,22 @@
+const dns = require('dns');
 const mongoose = require('mongoose');
-const dotenv = require('dotenv');
+const { env } = require('./env');
 
-dotenv.config();
+const fixLoopbackDns = () => {
+  const current = dns.getServers();
+  const onlyLoopback = current.every((s) => s === '127.0.0.1' || s === '::1');
+  if (!onlyLoopback && !process.env.DNS_SERVERS) return;
+
+  const servers = (process.env.DNS_SERVERS || '8.8.8.8,1.1.1.1')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  dns.setServers(servers);
+};
 
 const connectDB = async () => {
-  const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
-  if (!mongoUri) {
-    throw new Error('MONGODB_URI or MONGO_URI must be set to a MongoDB connection string');
-  }
-  if (!/^mongodb(?:\+srv)?:\/\//i.test(mongoUri)) {
-    throw new Error('MONGODB_URI or MONGO_URI must be a valid MongoDB connection string');
-  }
-
-  await mongoose.connect(mongoUri);
+  if (env.mongoUri.startsWith('mongodb+srv://')) fixLoopbackDns();
+  await mongoose.connect(env.mongoUri);
   console.log('MongoDB connected');
 };
 

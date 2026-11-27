@@ -1,7 +1,7 @@
 {
   "name": "news-alert-server",
   "version": "1.0.0",
-  "description": "Backend for real-time news alert system",
+  "description": "Backend API for the Real-Time News Alerts app",
   "main": "server.js",
   "type": "commonjs",
   "scripts": {
@@ -18,16 +18,13 @@
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^8.6.0",
-    "newsapi": "^2.4.1",
     "node-cron": "^4.6.0",
-    "nodemailer": "^10.1.0",
-    "server": "^0.0.3",
-    "server.js": "^1.0.0"
+    "nodemailer": "^10.1.0"
   },
   "engines": {
     "node": "24.x"
   },
   "devDependencies": {
-    "nodemon": "^1.14.10"
+    "nodemon": "^3.1.10"
   }
 }

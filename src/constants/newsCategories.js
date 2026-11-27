@@ -1,11 +1,15 @@
 const ALLOWED_CATEGORIES = [
-  "business",
-  "entertainment",
-  "general",
-  "health",
-  "science",
-  "sports",
-  "technology",
+  'business',
+  'entertainment',
+  'general',
+  'health',
+  'science',
+  'sports',
+  'technology',
 ];
 
-module.exports = { ALLOWED_CATEGORIES };
+const FREQUENCIES = ['immediate', 'hourly', 'daily'];
+
+const CHANNELS = ['email', 'browser'];
+
+module.exports = { ALLOWED_CATEGORIES, FREQUENCIES, CHANNELS };
