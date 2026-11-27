@@ -31,6 +31,24 @@ Staying on top of the news usually means checking several sites. This project fl
 - Alert preferences (topics, frequency, channels) are stored on the server and shown again on every visit.
 - Every alert is recorded and can be reviewed on the dashboard.
 
+### Screenshots
+
+**Home page**
+
+![Home page](docs/screenshots/HomePage.png)
+
+**Login page**
+
+![Login page](docs/screenshots/Login_page.png)
+
+**News feed**
+
+![News feed](docs/screenshots/news-feed.png)
+
+**Dashboard (alert history)**
+
+![Dashboard alert history](docs/screenshots/dashboard-history.png)
+
 ---
 
 ## Features
